@@ -9,6 +9,7 @@ import torch
 import torch.nn as nn
 from train_setup import *
 
+
 EDGE_EPISODES = 1
 MAX_CONTINUOUS_PLAY = 100
 MAX_ACTION_DISTANCE = 5
