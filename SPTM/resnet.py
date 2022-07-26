@@ -199,18 +199,18 @@ def generate_model(model_depth, **kwargs):
 
     return model
 
-model = generate_model(18)
-a = np.zeros((5, 120, 160, 6))
-b = a[0, :, :, :].reshape(1, a.shape[1], a.shape[2], a.shape[3])
-c = a[1, :, :, :].reshape(1, a.shape[1], a.shape[2], a.shape[3])
-b = b.transpose((0, 3, 1, 2))
-c = c.transpose((0, 3, 1, 2))
-b = torch.Tensor(b)
-# b = model.forward(b)
-d = b[:, :3, :, :]
-e = b[:, 3:, :, :]
-print(b.shape, d.shape, e.shape)
-d = model.res_encoder(d)
+# model = generate_model(18)
+# a = np.zeros((5, 120, 160, 6))
+# b = a[0, :, :, :].reshape(1, a.shape[1], a.shape[2], a.shape[3])
+# c = a[1, :, :, :].reshape(1, a.shape[1], a.shape[2], a.shape[3])
+# b = b.transpose((0, 3, 1, 2))
+# c = c.transpose((0, 3, 1, 2))
+# b = torch.Tensor(b)
+# # b = model.forward(b)
+# d = b[:, :3, :, :]
+# e = b[:, 3:, :, :]
+# print(b.shape, d.shape, e.shape)
+# d = model.res_encoder(d)
 # d = model.conv1(d)
 # d = model.bn1(d)
 # d = model.relu(d)
