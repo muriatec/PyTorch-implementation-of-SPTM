@@ -4,6 +4,7 @@ import cv2 as cv
 import numpy as np
 from copy import deepcopy
 import os
+import math
 
 config_data = yaml.load(open('turtlebot_nav.yaml', "r"), Loader=yaml.FullLoader)
 scene = ['Beechwood_0_int', 'Benevolence_0_int', 'Benevolence_1_int', 'Benevolence_2_int', 'Ihlen_0_int', 'Merom_0_int',
@@ -11,8 +12,6 @@ scene = ['Beechwood_0_int', 'Benevolence_0_int', 'Benevolence_1_int', 'Benevolen
 scene_id = 'Beechwood_0_int'
 
 env = iGibsonEnv(config_file=deepcopy(config_data), scene_id=scene_id, mode="gui_non_interactive")
-
-# rgb_pano = env.simulator.renderer.get_equi(mode="rgb", use_robot_camera=True)
 
 rgb_pano = None
 q = None
@@ -54,7 +53,7 @@ def action(env, type="random"):
         else:
             return np.array([0.0, 0.0])
 
-type = "control"
+type = "random"
 
 for episode in range(1):
     p = env.reset()
@@ -62,14 +61,41 @@ for episode in range(1):
     # save(episode, 0, type=type)
 
     for i in range(1, 10):
+        q = cv.waitKey(1)
         act = action(env, type)
         state, reward, done, info = env.step(act)
 
-        rgb_pano = env.simulator.renderer.get_equi(mode="rgb", use_robot_camera=True)
+        yaw = env.robots[0].get_rpy()[-1:-2:-1]
+        pos = env.robots[0].get_position()[:2]
+
+        x = pos[0]
+        y = pos[1]
+        ori = yaw[0]
+
+        camera_pose = np.array([x, y, 1.2])
+        # 设置相机朝向与机器人朝向一致
+        view_direction = np.array([1, ori, 0])
+        env.simulator.renderer.set_camera(camera_pose, camera_pose + view_direction, [0, 0, 1])
+
+        rgb_pano = env.simulator.renderer.get_equi(mode="rgb", use_robot_camera=False)
+
+        rgb_pano = np.array(rgb_pano)
+        # 截去机器人本体遮挡部分
+        rgb_pano = rgb_pano[:450, :960, :3]
+        print(rgb_pano.shape)
+        # 设置一个0矩阵，用于存放机器人朝向角
+        ori_mat = np.zeros((450, 960))
+        # 计算朝向角在矩阵中对应的位置，并将对应列赋为1
+        ori_index = round((ori + math.pi) / (2 * math.pi) * 960)
+        print(ori_index)
+        ori_mat[:, ori_index] = 1
+        ori_mat = ori_mat[:, :, np.newaxis]
+
+        rgb_pano_ori = np.concatenate((rgb_pano, ori_mat), axis=2)
+        print(rgb_pano_ori.shape)
 
         save(episode, i, type=type)
 
-        q = cv.waitKey(1)
         if q == ord("t"):
             break
         if done == ord("w"):
