@@ -13,11 +13,12 @@ scene_id = 'Beechwood_0_int'
 
 env = iGibsonEnv(config_file=deepcopy(config_data), scene_id=scene_id, mode="gui_non_interactive")
 
-rgb_pano = None
+pano = None
 q = None
 
+
 def save(episode, step, path="dataset_pano", type="random"):
-    global rgb_pano, scene_id
+    global pano, pano_ori, pano_op, scene_id
 
     if not os.path.exists(path):
         os.makedirs(path)
@@ -28,14 +29,17 @@ def save(episode, step, path="dataset_pano", type="random"):
     if not os.path.exists(path_type_scene_id):
         os.makedirs(path_type_scene_id)
 
-    for dir in ["rgb_pano"]:
+    for dir in ["pano", "pano_ori", "pano_op"]:
         if not os.path.exists(path_type_scene_id + "/" + dir):
             os.makedirs(path_type_scene_id + "/" + dir)
 
     id = "%03i_%04i" % (episode, step)
-    rgb_pano_path = path_type_scene_id + "/rgb_pano/" + id + ".npy"
-    np.save(rgb_pano_path, rgb_pano)
-    # rgb_pano.tofile(path_type_scene_id + "/rgb_pano/" + id + ".jpg")
+    pano_path = path_type_scene_id + "/pano/" + id + ".npy"
+    np.save(pano_path, pano)
+    pano_ori_path = path_type_scene_id + "/pano_ori/" + id + ".npy"
+    np.save(pano_ori_path, pano_ori)
+    pano_op_path = path_type_scene_id + "/pano_op/" + id + ".npy"
+    np.save(pano_op_path, pano_op)
 
     return
 
@@ -52,6 +56,7 @@ def action(env, type="random"):
             return np.array([0, 0.2])
         else:
             return np.array([0.0, 0.0])
+
 
 type = "random"
 
@@ -77,22 +82,24 @@ for episode in range(1):
         view_direction = np.array([1, ori, 0])
         env.simulator.renderer.set_camera(camera_pose, camera_pose + view_direction, [0, 0, 1])
 
-        rgb_pano = env.simulator.renderer.get_equi(mode="rgb", use_robot_camera=False)
+        pano = env.simulator.renderer.get_equi(mode="rgb", use_robot_camera=False)
 
-        rgb_pano = np.array(rgb_pano)
+        pano = np.array(pano)
         # 截去机器人本体遮挡部分
-        rgb_pano = rgb_pano[:450, :960, :3]
-        print(rgb_pano.shape)
+        pano = pano[:450, :960, :3]
+        # print(pano.shape)
         # 设置一个0矩阵，用于存放机器人朝向角
         ori_mat = np.zeros((450, 960))
         # 计算朝向角在矩阵中对应的位置，并将对应列赋为1
         ori_index = round((ori + math.pi) / (2 * math.pi) * 960)
-        print(ori_index)
+        # print(ori_index)
         ori_mat[:, ori_index] = 1
         ori_mat = ori_mat[:, :, np.newaxis]
 
-        rgb_pano_ori = np.concatenate((rgb_pano, ori_mat), axis=2)
-        print(rgb_pano_ori.shape)
+        pano_ori = np.concatenate((pano, ori_mat), axis=2)
+        # print(pano_ori.shape)
+
+        pano_op = [pano_ori, pos]
 
         save(episode, i, type=type)
 
